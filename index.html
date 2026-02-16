@@ -1,91 +1,92 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: transparent;
-            font-family: Arial, sans-serif;
-            width: fit-content;
-        }
+<meta charset="UTF-8">
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    display: inline-block;
+    overflow: hidden;
+}
 
-        .price {
-            font-size: 26px;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
+.container {
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: bold;
+    white-space: nowrap;
+}
 
-        #btc {
-            color: #f7931a;
-        }
-
-        #sol {
-            color: #f7931a;
-        }
-
-        #error {
-            font-size: 14px;
-            color: red;
-        }
-    </style>
+.up { color: #d60000; }
+.down { color: #0051c7; }
+.flat { color: #999; }
+.label { color: #f7931a; }
+.premium { color: #aa00ff; }
+.discount { color: #0088aa; }
+</style>
 </head>
 <body>
 
-    <div id="btc" class="price">BTC: --</div>
-    <div id="sol" class="price">SOL: --</div>
-    <div id="error"></div>
+<div class="container" id="price">
+    로딩중...
+</div>
 
-    <script>
-        async function fetchPrice() {
-            try {
-                const res = await fetch("https://api.upbit.com/v1/ticker?markets=KRW-BTC,KRW-SOL");
-                
-                if (!res.ok) {
-                    throw new Error("API 응답 오류: " + res.status);
-                }
+<script>
+async function fetchAll() {
+    try {
+        const [upbitRes, binanceRes, fxRes] = await Promise.all([
+            fetch("https://api.upbit.com/v1/ticker?markets=KRW-BTC,KRW-ETH,KRW-SOL"),
+            fetch("https://api.binance.com/api/v3/ticker/price?symbols=[\"BTCUSDT\",\"ETHUSDT\",\"SOLUSDT\"]"),
+            fetch("https://open.er-api.com/v6/latest/USD")
+        ]);
 
-                const data = await res.json();
+        const upbit = await upbitRes.json();
+        const binance = await binanceRes.json();
+        const fx = await fxRes.json();
 
-                if (!Array.isArray(data) || data.length === 0) {
-                    throw new Error("데이터 형식 오류");
-                }
+        const usdkrw = fx.rates.KRW;
 
-                let btcPrice = null;
-                let solPrice = null;
+        const formatCoin = (market, symbol, label) => {
+            const u = upbit.find(c => c.market === market);
+            const b = binance.find(c => c.symbol === symbol);
+            if (!u || !b) return "";
 
-                data.forEach(item => {
-                    if (item.market === "KRW-BTC") {
-                        btcPrice = item.trade_price;
-                    }
-                    if (item.market === "KRW-SOL") {
-                        solPrice = item.trade_price;
-                    }
-                });
+            const krw = u.trade_price;
+            const usdt = parseFloat(b.price);
+            const converted = usdt * usdkrw;
 
-                if (btcPrice !== null) {
-                    document.getElementById("btc").innerText =
-                        "BTC: ₩ " + btcPrice.toLocaleString();
-                }
+            const rate = (u.signed_change_rate * 100).toFixed(2);
+            const premium = ((krw / converted - 1) * 100).toFixed(2);
 
-                if (solPrice !== null) {
-                    document.getElementById("sol").innerText =
-                        "SOL: ₩ " + solPrice.toLocaleString();
-                }
+            let changeClass = "flat";
+            if (rate > 0) changeClass = "up";
+            if (rate < 0) changeClass = "down";
 
-                document.getElementById("error").innerText = "";
+            let premiumClass = premium >= 0 ? "premium" : "discount";
 
-            } catch (err) {
-                console.error(err);
-                document.getElementById("error").innerText =
-                    "";
-            }
-        }
+            return `<span class="label">${label}</span>: ₩${krw.toLocaleString()} 
+                    <span class="${changeClass}">
+                    (${rate > 0 ? "+" : ""}${rate}%)
+                    </span> / $${usdt.toLocaleString(undefined, {maximumFractionDigits:2})} 
+                    <span class="${premiumClass}">
+                    [김프 ${premium > 0 ? "+" : ""}${premium}%]
+                    </span>`;
+        };
 
-        fetchPrice();
-        setInterval(fetchPrice, 5000);
-    </script>
+        document.getElementById("price").innerHTML =
+            `${formatCoin("KRW-BTC","BTCUSDT","BTC")} | 
+             ${formatCoin("KRW-ETH","ETHUSDT","ETH")} | 
+             ${formatCoin("KRW-SOL","SOLUSDT","SOL")}`;
+
+    } catch (e) {
+        document.getElementById("price").innerText = "데이터 로드 실패";
+    }
+}
+
+fetchAll();
+setInterval(fetchAll, 15000);
+</script>
 
 </body>
 </html>
