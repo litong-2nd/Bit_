@@ -15,20 +15,50 @@ html, body {
     font-family: Arial, sans-serif;
     font-size: 15px;
     font-weight: bold;
-    line-height: 1.3;
+    line-height: 1.4;
+    color: #eaeaea;
 }
 
-.up { color: #d60000; }
-.down { color: #0051c7; }
-.flat { color: #999; }
+/* 코인명 */
 .label { color: #f7931a; }
-.premium { color: #aa00ff; }
-.discount { color: #0088aa; }
-.fear { color: #d60000; }
-.greed { color: #009900; }
-.neutral { color: #999; }
-.krw { color: #f7931a; } 
-.usd { color: #f7931a; } 
+
+/* 가격 */
+.krw, .usd { color: #ffffff; }
+
+/* 등락 강조 */
+.up {
+    color: #00c853;
+    background: rgba(0,200,83,0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.down {
+    color: #ff4d4f;
+    background: rgba(255,77,79,0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.flat {
+    color: #aaa;
+}
+
+/* 김프 */
+.premium {
+    color: #bb6cff;
+    font-weight: 700;
+}
+
+.discount {
+    color: #00bcd4;
+    font-weight: 700;
+}
+
+/* 공포탐욕 */
+.fear { color: #ff4d4f; font-weight: 700; }
+.greed { color: #00c853; font-weight: 700; }
+.neutral { color: #aaa; }
 
 </style>
 </head>
@@ -71,13 +101,16 @@ async function fetchAll() {
             if (rate > 0) changeClass = "up";
             if (rate < 0) changeClass = "down";
 
+            const arrow = rate > 0 ? "▲" : rate < 0 ? "▼" : "-";
             let premiumClass = premium >= 0 ? "premium" : "discount";
 
-            return `<span class="label">${label}</span>: ₩${krw.toLocaleString()}
+            return `<span class="label">${label}</span>: 
+                    <span class="krw">₩${krw.toLocaleString()}</span>
                     <span class="${changeClass}">
-                    (${rate > 0 ? "+" : ""}${rate}%)
+                    ${arrow} ${rate > 0 ? "+" : ""}${rate}%
                     </span>
-                    / $${usdt.toLocaleString(undefined,{maximumFractionDigits:2})}
+                    / 
+                    <span class="usd">$${usdt.toLocaleString(undefined,{maximumFractionDigits:2})}</span>
                     <span class="${premiumClass}">
                     [김프 ${premium > 0 ? "+" : ""}${premium}%]
                     </span>`;
@@ -94,7 +127,7 @@ async function fetchAll() {
             formatCoin("KRW-BTC","BTCUSDT","BTC") + "<br>" +
             formatCoin("KRW-ETH","ETHUSDT","ETH") + "<br>" +
             formatCoin("KRW-SOL","SOLUSDT","SOL") + "<br>" +
-            `공포·탐욕 지수*: <span class="${fngClass}">${fngValue} (${fngText})</span>`;
+            `공포·탐욕 지수: <span class="${fngClass}">${fngValue} (${fngText})</span>`;
 
     } catch (e) {
         document.getElementById("price").innerText = "데이터 로드 실패";
