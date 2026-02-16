@@ -1,39 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BTC Price</title>
-<style>
-  body {
-    margin: 0;
-    background: #ffffff;
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-  #price {
-    font-size: 48px;
-    font-weight: bold;
-  }
-</style>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            background: transparent;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 10px;
+        }
+        #price {
+            font-size: 28px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-<div id="price">Loading...</div>
+    <div id="price">--</div>
 
-<script>
-async function fetchPrice() {
-  const res = await fetch("https://api.upbit.com/v1/ticker?markets=KRW-BTC");
-  const data = await res.json();
-  const price = data[0].trade_price.toLocaleString();
-  document.getElementById("price").innerText = "₩ " + price;
-}
+    <script>
+        async function fetchPrice() {
+            const res = await fetch("https://api.upbit.com/v1/ticker?markets=KRW-BTC");
+            const data = await res.json();
+            const price = data[0].trade_price.toLocaleString();
+            document.getElementById("price").innerText = "₩ " + price;
+        }
 
-fetchPrice();
-setInterval(fetchPrice, 5000); // 5초마다 갱신
-</script>
+        fetchPrice();
+        setInterval(fetchPrice, 5000);
+    </script>
 
 </body>
 </html>
