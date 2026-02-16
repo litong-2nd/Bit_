@@ -11,23 +11,76 @@
             width: fit-content;
         }
 
-        #price {
-            font-size: 28px;
+        .price {
+            font-size: 26px;
             font-weight: bold;
-            color: #f59324;
+            margin-bottom: 4px;
+        }
+
+        #btc {
+            color: #f7931a;
+        }
+
+        #sol {
+            color: #f7931a;
+        }
+
+        #error {
+            font-size: 14px;
+            color: red;
         }
     </style>
 </head>
 <body>
 
-    <div id="price">--</div>
+    <div id="btc" class="price">BTC: --</div>
+    <div id="sol" class="price">SOL: --</div>
+    <div id="error"></div>
 
     <script>
         async function fetchPrice() {
-            const res = await fetch("https://api.upbit.com/v1/ticker?markets=KRW-BTC");
-            const data = await res.json();
-            const price = data[0].trade_price.toLocaleString();
-            document.getElementById("price").innerText = "₩ " + price;
+            try {
+                const res = await fetch("https://api.upbit.com/v1/ticker?markets=KRW-BTC,KRW-SOL");
+                
+                if (!res.ok) {
+                    throw new Error("API 응답 오류: " + res.status);
+                }
+
+                const data = await res.json();
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    throw new Error("데이터 형식 오류");
+                }
+
+                let btcPrice = null;
+                let solPrice = null;
+
+                data.forEach(item => {
+                    if (item.market === "KRW-BTC") {
+                        btcPrice = item.trade_price;
+                    }
+                    if (item.market === "KRW-SOL") {
+                        solPrice = item.trade_price;
+                    }
+                });
+
+                if (btcPrice !== null) {
+                    document.getElementById("btc").innerText =
+                        "BTC: ₩ " + btcPrice.toLocaleString();
+                }
+
+                if (solPrice !== null) {
+                    document.getElementById("sol").innerText =
+                        "SOL: ₩ " + solPrice.toLocaleString();
+                }
+
+                document.getElementById("error").innerText = "";
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById("error").innerText =
+                    "가격을 불러오지 못했습니다.";
+            }
         }
 
         fetchPrice();
