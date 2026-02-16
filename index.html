@@ -94,7 +94,7 @@ async function fetchAll() {
             formatCoin("KRW-BTC","BTCUSDT","BTC") + "<br>" +
             formatCoin("KRW-ETH","ETHUSDT","ETH") + "<br>" +
             formatCoin("KRW-SOL","SOLUSDT","SOL") + "<br>" +
-            `공포·탐욕 지수: <span class="${fngClass}">${fngValue} (${fngText})</span>`;
+            `공포·탐욕 지수*: <span class="${fngClass}">${fngValue} (${fngText})</span>`;
 
     } catch (e) {
         document.getElementById("price").innerText = "데이터 로드 실패";
