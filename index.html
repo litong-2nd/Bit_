@@ -2,66 +2,77 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 html, body {
     margin: 0;
     padding: 0;
     background: transparent;
-    display: inline-block;
-    overflow: hidden;
+    font-family: Arial, sans-serif;
 }
 
 .container {
-    font-family: Arial, sans-serif;
+    width: 100%;
+    box-sizing: border-box;
     font-size: 15px;
-    font-weight: bold;
-    line-height: 1.4;
+    font-weight: 600;
     color: #f7931a;
 }
 
-/* 코인명 */
-.label { color: #f7931a; }
+.coin {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
 
-/* 가격 */
-.krw, .usd { color: #ffffff; }
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
 
-/* 등락 강조 */
+.label {
+    font-weight: 700;
+    color: #f7931a;
+}
+
+.krw, .usd {
+    color: #ffffff;
+}
+
+.change {
+    font-size: 13px;
+}
+
 .up {
     color: #00c853;
-    background: rgba(0,200,83,0.15);
-    padding: 2px 6px;
-    border-radius: 4px;
 }
 
 .down {
     color: #ff4d4f;
-    background: rgba(255,77,79,0.15);
-    padding: 2px 6px;
-    border-radius: 4px;
 }
 
 .flat {
     color: #aaa;
 }
 
-/* 김프 */
-.premium {
-    color: #bb6cff;
-    font-weight: 700;
-}
+.premium { color: #bb6cff; }
+.discount { color: #00bcd4; }
 
-.discount {
-    color: #00bcd4;
-    font-weight: 700;
-}
-
-/* 공포탐욕 */
 .fear { color: #ff4d4f; font-weight: 700; }
 .greed { color: #00c853; font-weight: 700; }
 .neutral { color: #aaa; }
 
+@media (max-width: 480px) {
+    .container {
+        font-size: 13px;
+    }
+}
 </style>
 </head>
+
 <body>
 
 <div class="container" id="price">
@@ -85,36 +96,52 @@ async function fetchAll() {
 
         const usdkrw = fx.rates.KRW;
 
-        const formatCoin = (market, symbol, label) => {
+        function formatCoin(market, symbol, label) {
             const u = upbit.find(c => c.market === market);
             const b = binance.find(c => c.symbol === symbol);
             if (!u || !b) return "";
 
             const krw = u.trade_price;
+            const prevClose = u.prev_closing_price;
+            const changeAmount = krw - prevClose;
+            const changePercent = (u.signed_change_rate * 100).toFixed(2);
+
             const usdt = parseFloat(b.price);
             const converted = usdt * usdkrw;
-
-            const rate = (u.signed_change_rate * 100).toFixed(2);
             const premium = ((krw / converted - 1) * 100).toFixed(2);
 
             let changeClass = "flat";
-            if (rate > 0) changeClass = "up";
-            if (rate < 0) changeClass = "down";
+            if (changePercent > 0) changeClass = "up";
+            if (changePercent < 0) changeClass = "down";
 
-            const arrow = rate > 0 ? "▲" : rate < 0 ? "▼" : "-";
+            const arrow = changePercent > 0 ? "▲" :
+                          changePercent < 0 ? "▼" : "";
+
             let premiumClass = premium >= 0 ? "premium" : "discount";
 
-            return `<span class="label">${label}</span>: 
+            return `
+            <div class="coin">
+                <div class="row">
+                    <span class="label">${label}</span>
                     <span class="krw">₩${krw.toLocaleString()}</span>
-                    <span class="${changeClass}">
-                    ${arrow} ${rate > 0 ? "+" : ""}${rate}%
-                    </span>
-                    / 
+                </div>
+
+                <div class="row change ${changeClass}">
+                    전일대비 
+                    ${arrow} 
+                    ${changeAmount > 0 ? "+" : ""}${changeAmount.toLocaleString()}원
+                    (${changePercent > 0 ? "+" : ""}${changePercent}%)
+                </div>
+
+                <div class="row">
                     <span class="usd">$${usdt.toLocaleString(undefined,{maximumFractionDigits:2})}</span>
                     <span class="${premiumClass}">
-                    [김프 ${premium > 0 ? "+" : ""}${premium}%]
-                    </span>`;
-        };
+                        김프 ${premium > 0 ? "+" : ""}${premium}%
+                    </span>
+                </div>
+            </div>
+            `;
+        }
 
         const fngValue = parseInt(fng.data[0].value);
         const fngText = fng.data[0].value_classification;
@@ -124,10 +151,15 @@ async function fetchAll() {
         if (fngValue > 60) fngClass = "greed";
 
         document.getElementById("price").innerHTML =
-            formatCoin("KRW-BTC","BTCUSDT","BTC") + "<br>" +
-            formatCoin("KRW-ETH","ETHUSDT","ETH") + "<br>" +
-            formatCoin("KRW-SOL","SOLUSDT","SOL") + "<br>" +
-            `공포·탐욕 지수: <span class="${fngClass}">${fngValue} (${fngText})</span>`;
+            formatCoin("KRW-BTC","BTCUSDT","BTC") +
+            formatCoin("KRW-ETH","ETHUSDT","ETH") +
+            formatCoin("KRW-SOL","SOLUSDT","SOL") +
+            `<div class="coin">
+                공포·탐욕 지수:
+                <span class="${fngClass}">
+                    ${fngValue} (${fngText})
+                </span>
+            </div>`;
 
     } catch (e) {
         document.getElementById("price").innerText = "데이터 로드 실패";
